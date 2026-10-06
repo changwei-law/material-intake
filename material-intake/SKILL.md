@@ -150,6 +150,8 @@ powershell -ExecutionPolicy Bypass -File "$SKILL\scripts\win_remind.ps1" clear -
 
 文档解析、OCR、视觉识别、正式文书排版、法条核验仍属外接能力，各自可选、按需自备。清单与注意事项见 [references/依赖与注意事项.md](references/依赖与注意事项.md)。
 
+**macOS 与 Windows 的能力并不一致，不要按一侧的经验承诺另一侧**：macOS 直写日历与提醒事项，可读回、可按锚点撤销，支持周期日程；Windows 用五条通道拼出，**没有周期日程、没有待办清单等价物**，`.ics` 导入的条目无法按锚点读回与撤销，且到点提醒在关机或休眠时不可靠。完整差异见 [references/依赖与注意事项.md](references/依赖与注意事项.md) 第四节与 [references/日程写入.md](references/日程写入.md) 第六节。
+
 运行环境：Windows 侧需 **Windows 11 及以上**（本机日历后端按此验证）；macOS 侧需 **macOS 14 及以上**（日历后端二进制最低系统版本 14.0）；Python 3.9 及以上。
 
 需要授权或会改动系统的十三处（日历、提醒事项、文件与文件夹、宿主沙箱可写范围、Windows 日历访问、PowerShell 执行策略、Gatekeeper、SmartScreen、宿主库外读取确认、Windows 通知总开关、提醒身份注册、本机日历订阅服务、钉钉通道）及各处的放行路径与拒绝后果，见 [references/依赖与注意事项.md](references/依赖与注意事项.md) 第六节；分阶段引导话术见 [references/安装与授权引导.md](references/安装与授权引导.md)。缺任何一项都不会静默失败：脚本会给出放行路径或直接拒绝执行。
