@@ -36,7 +36,40 @@
 
 工作区目录、归档允许根目录与去向对照全部写在配置文件里，不写死在脚本中。技能默认读现场已有的 `自动化约定.md`、`AGENTS.md`、`归档台账.md`，以现场约定为准。
 
-## 三、安装
+## 三、需要的授权
+
+**先看结论：不给任何权限也能用。** 台账、查重、扫描、归档、归档登记全部可用，这是本技能的零授权模式。以下授权按需触发，用到哪一项才要哪一项，缺任何一项都不会静默失败——脚本要么打印放行路径，要么直接拒绝执行。
+
+| 档 | 触发条件 | 要给的授权 | 拒绝后仍可用 |
+|---|---|---|---|
+| **装机档** | 刚装好 | **无** | 台账、查重、归档、登记全部可用 |
+| 台账档 | 材料在桌面／文稿／下载等受保护目录 | macOS 文件与文件夹（必要时完全磁盘访问）；宿主库外读取确认；WorkBuddy／千问办公的沙箱可写范围 | 先把材料复制进工作区再处理 |
+| 日程档 | 首次写日历／提醒 | macOS 日历 + 提醒事项（**必须完全访问**）；Windows 日历访问；首次双击脚本的 Gatekeeper／SmartScreen 放行 | 改用 `.ics` 导出后手动导入 |
+| 通知档 | 要「到点弹提醒」 | Windows 通知总开关（系统级）、通知身份注册、PowerShell 执行策略；可选本机日历订阅、钉钉 | 改用 `.ics` 导到手机日历 |
+
+三点必须讲清楚：
+
+- macOS 的日历／提醒授权**不能只给「仅写入」**：写入会成功，但读取与删除被拒，防重复与按锚点撤销同时失效，脚本会直接拒绝写入。「已授权」不等于能读，以 `doctor` 的结论行为准。
+- 有 **3 项会改动系统**：Windows 通知总开关（打开后所有应用的通知都会弹）、通知身份注册（写注册表项与开始菜单快捷方式）、日历订阅服务（开机自启计划任务）。三项均可回退，执行前须先说明「改什么、影响谁、怎么退」并取得同意。
+- 钉钉通道**会把日程标题与时间上传钉钉服务器**，标题含案号、法院、当事人时属案件信息外发，**涉密案件不要用**。
+
+完整的十三项授权逐条列明（何时要、在哪里放行、拒绝了会怎样），见 **[docs/01-授权与工具调用清单.md](docs/01-授权与工具调用清单.md)**。
+
+## 四、调用的工具与接口
+
+| 类别 | 内容 |
+|---|---|
+| 随包程序 | `python3`（3.9+，**仅标准库**，无需 pip）；macOS 的 `bin/lr_ek`（EventKit 后端，随包 arm64 二进制，可自编译）；Windows 的 `powershell.exe`（本机日历、系统通知、日历订阅、钉钉四个后端） |
+| 可选程序 | `swiftc`（仅当后端缺失或源码更新时自动重编译，需 Xcode 命令行工具）；`dws`／`dws-core`（钉钉日历与待办，需自行安装） |
+| 系统接口 | macOS EventKit；Windows `Windows.ApplicationModel.Appointments`（日历存储）、`Windows.UI.Notifications`（系统通知）、ScheduledTasks（计划任务）、注册表 `HKCU`（通知身份与总开关）、`Invoke-RestMethod`（钉钉投递） |
+| 网络 | 只有两处：`127.0.0.1:8799`（本机回环的日历订阅服务，不出网）与 `oapi.dingtalk.com`（钉钉，HMAC-SHA256 加签）。**不启用钉钉就没有任何内容离开本机** |
+| 写入位置 | 工作区目录与台账；`~/.material-intake/config.json`；系统日历与提醒事项（带「来福ID: 锚点」备注，可撤销）；Windows 的 `%USERPROFILE%\.material-intake\`、注册表项、计划任务 |
+
+脚本自身的写入边界：不删除原件、不覆盖同名文件、不写归档白名单以外的路径；归档命令缺省只预演，加 `--apply` 才落盘。OCR、视觉识别、docx／xlsx／PDF 解析、正式文书排版、法条核验属**外接能力**，由宿主或使用者自备，不装不影响台账与归档。
+
+逐项调用点与写入位置，见 **[docs/01-授权与工具调用清单.md](docs/01-授权与工具调用清单.md)**。
+
+## 五、安装
 
 技能就是 `material-intake/` 这个目录。把整个目录复制到你所用的宿主技能目录下即可：
 
@@ -47,49 +80,54 @@
 | 千问办公（QwenWork） | `~/.qwenworkcn/skills/material-intake/` |
 | DSH 桌面版 | 应用数据目录下的 `harness/skills/material-intake/` |
 
-Windows 上对应 `%USERPROFILE%\` 下的同名目录。装好后运行配置初始化：
+Windows 上对应 `%USERPROFILE%\` 下的同名目录。装好后运行：
 
 ```bash
 python3 material-intake/scripts/material_intake.py doctor        # 体检：宿主、依赖、权限、配置
 python3 material-intake/scripts/material_intake.py init-config   # 生成配置模板
 ```
 
-首次使用日历或提醒功能时，**必须由使用者本人在系统设置里授权**，技能不会代点、不会绕过：
+首次使用日历或提醒功能时，**必须由使用者本人在系统设置里授权**，技能不会代点、不会绕过。分阶段引导、每项授权的四句话话术与常见卡住的地方，见 **[docs/02-安装与首次授权.md](docs/02-安装与首次授权.md)**。
 
-- macOS：系统设置 → 隐私与安全性 → 日历／提醒事项，勾选当前宿主应用，权限档位选**「完全访问」**。只给「仅写入」会导致读取被拒，查重与按锚点撤销同时失效，脚本会直接拒绝写入。
-- Windows：系统要求 Windows 11 及以上、Windows PowerShell 5.1。日历订阅与钉钉通道需另行安装，见 `material-intake/references/` 下对应文档。
+## 六、依赖与已知限制
 
-## 四、依赖与已知限制
-
-- **Python 3**：三个脚本（`material_intake.py`、`schedule_write.py`、`serve_feed.py`）仅用标准库，无需 pip 安装。
-- **macOS 日程后端**：`material-intake/bin/lr_ek` 是调用 EventKit 的命令行工具，仓库内附源码 `lr_ek.swift`。随包二进制为 **Apple Silicon（arm64）** 架构，Intel Mac 请自行编译：
+- **Python 3.9+**：三个脚本（`material_intake.py`、`schedule_write.py`、`serve_feed.py`）仅用标准库，无需 pip 安装。
+- **macOS 14+**：日程后端 `material-intake/bin/lr_ek` 调用 EventKit，随包二进制为 **Apple Silicon（arm64）**，最低系统 macOS 14.0；Intel Mac 请自行编译：
 
   ```bash
-  swiftc -O material-intake/bin/lr_ek.swift -o material-intake/bin/lr_ek
+  swiftc -O -target x86_64-apple-macos14.0 material-intake/bin/lr_ek.swift -o material-intake/bin/lr_ek
   ```
 
   之所以不用 AppleScript：macOS 的 AppleScript 通道无法删除周期性事件（实测静默失败），EventKit 可以。条目识别一律靠备注末行的锚点「来福ID: &lt;anchor&gt;」整行精确匹配，不使用模糊包含，避免误伤同名条目。
-- **Windows**：桌面日历、系统通知、日历订阅与钉钉四个后端均为 PowerShell 脚本，实测环境为 Windows 11（10.0.26200）。Windows 10 及更早版本上的 WinRT 日历存储接口行为未经验证，`doctor` 会给出提示。
+- **Windows 11 及以上 + PowerShell 5.1**：桌面日历、系统通知、日历订阅与钉钉四个后端均为 PowerShell 脚本，实测环境为 Windows 11（10.0.26200）。Windows 10 及更早版本上的 WinRT 日历存储接口行为未经验证，`doctor` 会给出提示。
 - **通知身份**：Windows 系统通知使用 `MaterialIntake.Reminder` 作为 AppUserModelId。
 
-## 五、隐私与数据
+## 七、隐私与数据
 
 - 除钉钉通道外，**全部处理在本机完成**，不上传任何材料内容。
-- **钉钉通道会出网**：日程标题与时间会上传钉钉服务器。标题含案号、法院、当事人时属案件信息外发，涉密案件请改用系统通知或本机日历订阅。
+- **钉钉通道会出网**：日程标题与时间会上传钉钉服务器。涉密案件请改用系统通知或本机日历订阅。
 - 凭据只存本机、不随包分发：钉钉机器人 webhook token 存 `%USERPROFILE%\.material-intake\dingtalk.json`，日历订阅服务仅监听 `127.0.0.1`。
 - 仓库不含任何真实案件材料、当事人信息或凭据；`assets/config.example.json` 中的路径均为占位符。
 
-## 六、目录结构
+## 八、目录结构
 
 ```
-material-intake/
-├── SKILL.md                        技能说明与主流程
-├── assets/                         配置与台账模板
-├── bin/lr_ek, lr_ek.swift          macOS EventKit 后端（二进制 + 源码）
-├── references/                     工作流细则、安装授权引导、各通道接入说明
-└── scripts/                        Python 与 PowerShell 实现
+.
+├── README.md                       本文件
+├── LICENSE                         MIT
+├── docs/                           文档（不随技能安装）
+│   ├── 00-文档索引.md
+│   ├── 01-授权与工具调用清单.md
+│   ├── 02-安装与首次授权.md
+│   └── 03-维护与发布说明.md
+└── material-intake/                技能本体（复制这一个目录即完成安装）
+    ├── SKILL.md                    主流程与命令
+    ├── assets/                     配置与台账模板
+    ├── bin/lr_ek, lr_ek.swift      macOS EventKit 后端
+    ├── references/                 细则文档（随技能分发）
+    └── scripts/                    Python 与 PowerShell 实现
 ```
 
-## 七、许可
+## 九、许可
 
 [MIT License](LICENSE) © 2026 常威律师

@@ -84,7 +84,7 @@ metadata:
 
 旧版 WorkBuddy 使用 `~/.codebuddy/skills/`，两种路径都在识别范围内；Windows 上千问办公为 `%USERPROFILE%\.qwenworkcn\skills\`。调用脚本前若不确定，先用 `ls` 确认目录存在。
 
-DSH 上另有一处宿主前置：macOS 14 起，宿主应用申请日历／提醒事项「完全访问」时，其 `Info.plist` 必须声明 `NSCalendarsFullAccessUsageDescription` 与 `NSRemindersFullAccessUsageDescription`。缺这两个键时系统不弹窗、直接静默拒绝（后端 0.04 秒返回「未授权」），日程写入会凭空不可用。修复做法：补上两个键 → `codesign --force --sign - --preserve-metadata=identifier,entitlements,flags` 重签 → 退出并重开宿主。`install-mac.command` 与「DSH日历授权修复.command」都会自动检查并修复。
+DSH 上另有一处宿主前置：macOS 14 起，宿主应用申请日历／提醒事项「完全访问」时，其 `Info.plist` 必须声明 `NSCalendarsFullAccessUsageDescription` 与 `NSRemindersFullAccessUsageDescription`。缺这两个键时系统不弹窗、直接静默拒绝（后端 0.04 秒返回「未授权」），日程写入会凭空不可用。修复做法：补上两个键 → `codesign --force --sign - --preserve-metadata=identifier,entitlements,flags` 重签 → 退出并重开宿主。这属于改动他人应用包，本技能不附带自动修复脚本，须按 [references/安装与授权引导.md](references/安装与授权引导.md) 第七节，先向使用者明示改什么、如何还原，取得同意后执行。
 
 ```bash
 python3 "$SKILL/scripts/material_intake.py" doctor
@@ -152,7 +152,7 @@ powershell -ExecutionPolicy Bypass -File "$SKILL\scripts\win_remind.ps1" clear -
 
 运行环境：Windows 侧需 **Windows 11 及以上**（本机日历后端按此验证）；macOS 侧需 **macOS 14 及以上**（日历后端二进制最低系统版本 14.0）；Python 3.9 及以上。
 
-需要授权或会改动系统的十一处（日历、提醒事项、文件与文件夹、宿主沙箱可写范围、Windows 日历访问、PowerShell 执行策略、Gatekeeper、SmartScreen、宿主库外读取确认、Windows 通知总开关、提醒身份注册）及各处的放行路径与拒绝后果，见 [references/依赖与注意事项.md](references/依赖与注意事项.md) 第六节与《使用与设置说明.md》「授权与系统改动清单」。缺任何一项都不会静默失败：脚本会给出放行路径或直接拒绝执行。
+需要授权或会改动系统的十三处（日历、提醒事项、文件与文件夹、宿主沙箱可写范围、Windows 日历访问、PowerShell 执行策略、Gatekeeper、SmartScreen、宿主库外读取确认、Windows 通知总开关、提醒身份注册、本机日历订阅服务、钉钉通道）及各处的放行路径与拒绝后果，见 [references/依赖与注意事项.md](references/依赖与注意事项.md) 第六节；分阶段引导话术见 [references/安装与授权引导.md](references/安装与授权引导.md)。缺任何一项都不会静默失败：脚本会给出放行路径或直接拒绝执行。
 
 其中两处属于系统改动，执行前必须先向使用者明示改什么、影响谁、怎么回退，得到同意再动：Windows 通知总开关（打开后所有应用通知都会弹）、提醒身份注册（写注册表项与开始菜单快捷方式，可完整回退）。
 
