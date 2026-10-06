@@ -1,0 +1,17 @@
+# macOS / Windows 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 真实配置与运行产物（模板 config.example.json 会正常入库）
+config.json
+.material-intake/
+calendar-feed/
+agenda.ics
+*.log
+
+# 打包与临时文件
+*.zip
+*.bak-*
+__pycache__/
+*.pyc

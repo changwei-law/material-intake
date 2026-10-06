@@ -1,0 +1,29 @@
+{
+  "workspace": "/Users/yourname/Documents/材料代办录入",
+  "dirs": {
+    "inbox": "待处理",
+    "work": "代办录入",
+    "processed": "已处理",
+    "pending": "待归档"
+  },
+  "archive_ledger": "归档台账.md",
+  "allowed_roots": [
+    "/Users/yourname/Documents/案件库",
+    "/Users/yourname/Documents/客户顾问"
+  ],
+  "dedupe_roots": [
+    "/Users/yourname/Documents/案件库"
+  ],
+  "destinations": [
+    {
+      "label": "案件卷宗",
+      "path": "/Users/yourname/Documents/案件库/【诉讼】示例案件/工作空间/",
+      "keywords": "起诉|答辩|传票|判决|裁定|证据|代理词"
+    },
+    {
+      "label": "可复用模板",
+      "path": "/Users/yourname/Documents/02_文书模板/",
+      "keywords": "模板|指引|清单|sop"
+    }
+  ]
+}
